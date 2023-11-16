@@ -1,47 +1,54 @@
-import pandas as pd 
+import os
+import csv
 
-filepath= "./PyPoll/Resources/election_data.csv"
-df = pd.read_csv(filepath,sep = ",")
+file = os.path.join('..', 'Resources', 'election_data.csv')
 
-total_votes = df['Ballot ID'].count()
-candidates = df['Candidate'].unique()
+poll = {}
+total_votes = 0
 
-number_of_votes_per_candidate=df.groupby('Candidate').agg({'Ballot ID' : 'count'})
-percentage_per_candidate = (number_of_votes_per_candidate['Ballot ID'] / total_votes) * 100
-percentage_per_candidate = percentage_per_candidate.sort_values(ascending=False)
-winner = percentage_per_candidate.index[0]
+with open(file, 'r') as csvfile:
+    csvread = csv.reader(csvfile)
+    next(csvread, None)
 
+    for row in csvread:
+        total_votes += 1
+        if row[2] in poll.keys():
+            poll[row[2]] = poll[row[2]] + 1
+        else:
+            poll[row[2]] = 1
 
-# Create a new DataFrame with the results
-results_df = pd.DataFrame({
-    'Candidate': percentage_per_candidate.index,
-    'Percentage of Votes': percentage_per_candidate.values,
-    'Total Votes': number_of_votes_per_candidate['Ballot ID'].values
-})
+candidates = []
+num_votes = []
 
-# Sort the results by percentage of votes in descending order
-results_df = results_df.sort_values('Candidate', ascending=True)
+for key, value in poll.items():
+    candidates.append(key)
+    num_votes.append(value)
 
-# Add a column with the formatted percentage of votes
-results_df['Percentage of Votes'] = results_df['Percentage of Votes'].map('{:.3f}%'.format)
+vote_percent = []
+for n in num_votes:
+    vote_percent.append(round(n/total_votes*100, 3))
 
-# Add a header with the total number of votes
-header = f'''
-Election Results
--------------------------
-Total Votes: {total_votes}
--------------------------
-'''
+clean_data = list(zip(candidates, num_votes, vote_percent))
+winner_list = []
 
-# Add a footer with the winner
-footer = f'''
--------------------------
-Winner: {winner}
--------------------------
-'''
+for name in clean_data:
+    if max(num_votes) == name[1]:
+        winner_list.append(name[0])
 
-# Write the results to a CSV file
-with open('./PyPoll/analysis/election_results.csv', 'w') as f:
-    f.write(header)
-    results_df.to_csv(f, index=False)
-    f.write(footer)
+winner = winner_list[0]
+
+if len(winner_list) > 1:
+    for w in range(1, len(winner_list)):
+        winner = winner + ", " + winner_list[w]
+
+output_file = os.path.join('election_results.txt')
+
+with open(output_file, 'w') as txtfile:
+    txtfile.writelines('Election Results \n------------------------- \nTotal Votes: ' + str(total_votes) + 
+      '\n-------------------------\n')
+    for entry in clean_data:
+        txtfile.writelines(entry[0] + ": " + str(entry[2]) +'%  (' + str(entry[1]) + ')\n')
+    txtfile.writelines('------------------------- \nWinner: ' + winner + '\n-------------------------')
+
+with open(output_file, 'r') as readfile:
+    print(readfile.read())
