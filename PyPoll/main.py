@@ -1,3 +1,11 @@
+# dataset  composed  3columns: "Voter ID", "County", and "Candidate".
+# create a Python script that analyzes votes, and alculates:
+# total number of votes cast
+# complete list of candidates who received votes
+# percentage of votes each candidate won
+# total number of votes each candidate won
+# winner of the election based on popular vote
+
 import os
 import csv
 
